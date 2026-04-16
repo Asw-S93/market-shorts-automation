@@ -50,11 +50,10 @@ def main():
     with open(script_path, "w") as f:
         json.dump(script_content, f)
 
-    audio_out = OUTPUT_DIR / "temp" / "voiceover.mp3"
-    voice_script = BASE_DIR / "../youtube-shorts-automation/scripts/generate_voiceover_elevenlabs.py"
+    audio_out = OUTPUT_DIR / "temp" / "voiceover.wav"
+    voice_script = SCRIPTS_DIR / "generate_voiceover_local.py"
     
-    if os.path.exists(voice_script):
-        run_step(f"python3 {voice_script} --script-json {script_path} --output {audio_out}", "Generating ElevenLabs Voiceover")
+    run_step(f"python3 {voice_script} --script-json {script_path} --output {audio_out}", "Generating Local Voiceover")
     
     # 4. Motion Rendering
     if not run_step(f"python3 {SCRIPTS_DIR}/motion_renderer.py", "Rendering motion graphics"):
