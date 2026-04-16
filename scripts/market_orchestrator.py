@@ -29,7 +29,10 @@ def main():
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     
     # 1. Fetch Data
-    if not run_step(f"python3 {SCRIPTS_DIR}/data_fetcher.py", "Fetching market data"):
+    import data_fetcher
+    snapshot = data_fetcher.get_latest_market_snapshot()
+    if not snapshot:
+        logger.error("Failed to fetch market snapshot")
         return
 
     # 2. Generate Chart Visuals
