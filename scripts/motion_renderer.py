@@ -45,22 +45,44 @@ class MarketRenderer:
         pts = np.array(pts, np.int32).reshape((-1, 1, 2))
         cv2.polylines(frame, [pts], False, (157, 255, 0), 6, cv2.LINE_AA) # Neon Green
         
-        # 3. Floating Stats
+        # 3. Floating Stats with shadow for readability
+        shadow_color = (0, 0, 0)
+        text_color = (157, 255, 0)
+        cv2.putText(frame, f"NIFTY: {data['current_price']}", (104, 304), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 3, shadow_color, 6, cv2.LINE_AA)
         cv2.putText(frame, f"NIFTY: {data['current_price']}", (100, 300), 
-                    cv2.FONT_HERSHEY_SIMPLEX, 3, (157, 255, 0), 6, cv2.LINE_AA)
+                    cv2.FONT_HERSHEY_SIMPLEX, 3, text_color, 6, cv2.LINE_AA)
         
         return frame
 
     def render_video(self, data, output_path):
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        out = cv2.VideoWriter(str(output_path), fourcc, self.fps, (self.width, self.height))
+        # Using H.264 via ffmpeg command for better compatibility
+        temp_avi = str(output_path).replace('.mp4', '_temp.avi')
         
-        total_frames = 150 # 5 seconds
+        # First write as AVI (uncompressed/raw)
+        fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+        out = cv2.VideoWriter(temp_avi, fourcc, self.fps, (self.width, self.height))
+        
+        total_frames = 150  # 5 seconds
         for i in range(total_frames):
             frame = self.create_frame(data, i, total_frames)
             out.write(frame)
         
         out.release()
+        
+        # Convert to H.264 MP4 using ffmpeg
+        import subprocess
+        ffmpeg_cmd = [
+            'ffmpeg', '-y', '-i', temp_avi,
+            '-c:v', 'libx264', '-preset', 'fast', '-crf', '23',
+            '-pix_fmt', 'yuv420p',  # Required for browser compatibility
+            str(output_path)
+        ]
+        subprocess.run(ffmpeg_cmd, check=True, capture_output=True)
+        
+        # Cleanup temp file
+        import os
+        os.remove(temp_avi)
 
 if __name__ == "__main__":
     renderer = MarketRenderer()
